@@ -1,12 +1,10 @@
 ---
-
 - name: Prepare compute node
   hosts:
     - compute
   tasks:
-    - name: "Update repo"
-      ansible.builtin.shell: sudo apt update
-
+    - name: Update repo
+      ansible.builtin.command: sudo apt update
     - name: Install dependencies
       ansible.builtin.apt:
         name:
@@ -14,22 +12,21 @@
         state: present
 
     - name: Copy hosts file
-      template:
+      ansible.builtin.template:
         src: openstack/chrony.conf
         dest: /etc/chrony
         owner: root
         group: root
-        mode: 0644
-        backup: no
-    - name: "restart chorny"
-      ansible.builtin.shell: systemctl restart chronyd
+        mode: "0644"
+        backup: false
+    - name: Restart chorny
+      ansible.builtin.command: systemctl restart chronyd
 - name: Prepare controller node
   hosts:
     - controller
   tasks:
-    - name: "Update repo"
-      ansible.builtin.shell: sudo apt update
-      
+    - name: Update repo
+      ansible.builtin.command: sudo apt update
     - name: Install dependencies
       ansible.builtin.apt:
         name:
@@ -37,23 +34,23 @@
         state: present
 
     - name: Copy hosts file
-      template:
+      ansible.builtin.template:
         src: openstack/chrony.conf
         dest: /etc/chrony
         owner: root
         group: root
-        mode: 0644
-        backup: no
-    - name: "restart chorny"
-      ansible.builtin.shell: systemctl restart chronyd
+        mode: "0644"
+        backup: false
+    - name: Restart chorny
+      ansible.builtin.command: systemctl restart chronyd
 - name: Build deployment nodes
   hosts:
     - kola
   vars:
-    - kola_dir : "/etc/kolla/"
+    - kola_dir: /etc/kolla/
   tasks:
-    - name: "Update repo"
-      ansible.builtin.shell: sudo apt update
+    - name: Update repo
+      ansible.builtin.command: sudo apt update
     - name: Install dependencies
       ansible.builtin.apt:
         name:
@@ -68,11 +65,10 @@
           - chrony
         state: present
 
-    - name: "restart chorny"
-      ansible.builtin.shell: systemctl restart chronyd
-    - name: "Upgrade pip to latest version"
-      ansible.builtin.shell: sudo pip3 install -U pip 
-
+    - name: Restart chorny
+      ansible.builtin.command: systemctl restart chronyd
+    - name: Upgrade pip to latest version
+      ansible.builtin.command: sudo pip3 install -U pip
     - name: Install ansible
       ansible.builtin.pip:
         name:
@@ -84,107 +80,83 @@
           - python-barbicanclient
           - pip install diskimage-builder
 
-    - name: "Clean"
-      ansible.builtin.shell:  rm -rf /etc/kolla/
-
-    - name: "Create the /etc/kolla directory"
+    - name: Clean
+      ansible.builtin.command: rm -rf /etc/kolla/
+    - name: Create the /etc/kolla directory
       ansible.builtin.file:
         path: "{{ kola_dir }}"
         state: directory
-        recurse: yes
+        recurse: true
         owner: root
         group: root
 
-    - name: "Create the customize config kolla directory"
+    - name: Create the customize config kolla directory
       ansible.builtin.file:
         path: "{{ kola_dir }}/config"
         state: directory
-        recurse: yes
+        recurse: true
         owner: root
         group: root
 
     - name: Copy customize config to the kolla config directory
-      copy:
+      ansible.builtin.copy:
         src: openstack/config/
         dest: "{{ kola_dir }}/config"
 
     - name: Copy hosts file
-      template:
+      ansible.builtin.template:
         src: openstack/chrony.conf
         dest: /etc/chrony
         owner: root
         group: root
-        mode: 0644
-        backup: no
+        mode: "0644"
+        backup: false
 
-    - name: "Copy globals.yml and passwords.yml to /etc/kolla directory"
+    - name: Copy globals.yml and passwords.yml to /etc/kolla directory
       ansible.builtin.shell: cp -r /usr/local/share/kolla-ansible/etc_examples/kolla/* /etc/kolla
 
-    - name: "Copy all-in-one and multinode inventory files to the current directory"
+    - name: Copy all-in-one and multinode inventory files to the current directory
       ansible.builtin.shell: cp /usr/local/share/kolla-ansible/ansible/inventory/* /etc/kolla
 
-    - name: "Passwords used in our deployment are stored in /etc/kolla/passwords.yml"
-      ansible.builtin.shell: kolla-genpwd
-
-    - name: deploy hosts file
-      template:
+    - name: Passwords used in our deployment are stored in /etc/kolla/passwords.yml
+      ansible.builtin.command: kolla-genpwd
+    - name: Deploy hosts file
+      ansible.builtin.template:
         src: openstack/hosts
         dest: /etc/
         owner: root
         group: root
-        mode: 0644
-        backup: no
+        mode: "0644"
+        backup: false
 
-    - name: deploy globals template
-      template:
+    - name: Deploy globals template
+      ansible.builtin.template:
         src: openstack/config/globals.yml
         dest: "{{ kola_dir }}"
         owner: root
         group: root
-        mode: 0644
-        backup: no
+        mode: "0644"
+        backup: false
 
-    - name: deploy multinode template
-      template:
+    - name: Deploy multinode template
+      ansible.builtin.template:
         src: openstack/multinode
         dest: "{{ kola_dir }}"
         owner: root
         group: root
-        mode: 0644
-        backup: no
+        mode: "0644"
+        backup: false
 
-    - name: deploy globals template
-      template:
+    - name: Deploy globals template
+      ansible.builtin.template:
         src: openstack/ansible.cfg
         dest: "{{ kola_dir }}"
         owner: root
         group: root
-        mode: 0644
-        backup: no
+        mode: "0644"
+        backup: false
 
-    - name: "install-deps"
-      ansible.builtin.shell: kolla-ansible install-deps
-
-    - name: "Generate octavia-certificate"
-      ansible.builtin.shell: kolla-ansible octavia-certificates
-      
-    # - name: "Apply bootstrap"
-    #   ansible.builtin.shell: kolla-ansible -i multinode bootstrap-servers
-    #   args:
-    #     chdir: "{{ kola_dir }}"
-
-    # - name: "Precheck"
-    #   ansible.builtin.shell: kolla-ansible -i multinode prechecks
-    #   args:
-    #     chdir: "{{ kola_dir }}"
-
-    # - name: "Deploy"
-    #   ansible.builtin.shell: kolla-ansible -i multinode deploy
-    #   args:
-    #     chdir: "{{ kola_dir }}"
-
-    # - name: "Post deploy"
-    #   ansible.builtin.shell: kolla-ansible post-deploy
-    #   args:
-    #     chdir: "{{ kola_dir }}"
-
+    - name: Install-deps
+      ansible.builtin.command: kolla-ansible install-deps
+    - name: Generate octavia-certificate
+      ansible.builtin.command: kolla-ansible octavia-certificates
