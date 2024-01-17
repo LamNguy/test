@@ -168,23 +168,23 @@
     - name: "Generate octavia-certificate"
       ansible.builtin.shell: kolla-ansible octavia-certificates
       
-    # - name: "Apply bootstrap"
-    #   ansible.builtin.shell: kolla-ansible -i multinode bootstrap-servers
-    #   args:
-    #     chdir: "{{ kola_dir }}"
+    - name: "Apply bootstrap"
+      ansible.builtin.shell: kolla-ansible -i multinode bootstrap-servers
+      args:
+        chdir: "{{ kola_dir }}"
 
-    # - name: "Precheck"
-    #   ansible.builtin.shell: kolla-ansible -i multinode prechecks
-    #   args:
-    #     chdir: "{{ kola_dir }}"
+    - name: "Precheck"
+      ansible.builtin.shell: kolla-ansible -i multinode prechecks
+      args:
+        chdir: "{{ kola_dir }}"
 
-    # - name: "Deploy"
-    #   ansible.builtin.shell: kolla-ansible -i multinode deploy
-    #   args:
-    #     chdir: "{{ kola_dir }}"
+    - name: "Deploy"
+      ansible.builtin.shell: kolla-ansible -i multinode deploy
+      args:
+        chdir: "{{ kola_dir }}"
 
-    # - name: "Post deploy"
-    #   ansible.builtin.shell: kolla-ansible post-deploy
-    #   args:
-    #     chdir: "{{ kola_dir }}"
+    - name: "Post deploy"
+      ansible.builtin.shell: kolla-ansible post-deploy
+      args:
+        chdir: "{{ kola_dir }}"
 
