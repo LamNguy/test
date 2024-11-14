@@ -1,0 +1,15 @@
+root@controller01:~# vi /etc/kolla/multinode 
+[control]
+control[01:03] ansible_user=root ansible_password=admin123
+
+[network]
+control[01:03] ansible_user=root ansible_password=admin123
+
+[compute]
+compute[01:02] ansible_user=root ansible_password=admin123
+
+[storage]
+compute02 ansible_user=root ansible_password=admin123
+
+[monitoring]
+control03 ansible_user=root ansible_password=admin123
