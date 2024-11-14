@@ -1,0 +1,29 @@
+wget http://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+openstack image create cirros --file ./cirros-0.6.2-x86_64-disk.img --disk-format qcow2 --container-format bare --public
+openstack flavor create --id 1 --ram 1024 --disk 1  --vcpu 1 tiny
+openstack security group create allow-all --description "Allow all traffic"
+openstack security group rule create --ingress --protocol any --ethertype IPv4 allow-all
+openstack security group rule create --ingress --protocol any --ethertype IPv6 allow-all
+openstack security group rule create --egress --protocol any --ethertype IPv4 allow-all
+openstack security group rule create --egress --protocol any --ethertype IPv6 allow-all
+
+
+openstack network create --share --external --provider-physical-network physnet1 --provider-network-type flat external
+openstack subnet create --subnet-range 10.72.179.0/24 \
+                        --gateway 10.72.179.250 \
+                        --network external \
+                        --allocation-pool start=10.72.179.10,end=10.72.179.200 \
+                        external-subnet
+
+openstack network create --share --provider-physical-network physnet2 --provider-network-type flat lb-mgmt-net
+openstack subnet create --subnet-range 10.72.180.0/24 \
+                        --no-gateway \
+                        --network lb-mgmt-net \
+                        --allocation-pool start=10.72.180.10,end=10.72.180.200 \
+                        lb-mgmt-net-subnet
+
+
+#net-id-pro-vlan111='openstack network list | grep pro-vlan111 | cut -f2 -d"|"'
+#openstack server create --flavor 1 --image cirros --nic net-id=96448280-519e-4173-a198-ee0b18d66f02 inst1
+#openstack server create --flavor 1 --image cirros --nic net-id=$net-id-pro-vlan111 inst1
+
