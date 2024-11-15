@@ -1,0 +1,23 @@
+oot@controller01:~# openstack loadbalancer create --name lb1 --vip-subnet-id 192.168.30.0/24
+
+
+root@controller01:~# openstack loadbalancer create --name lb1 --vip-subnet-id 192.168.30.0/24
+# Create TCP Listener
+root@controller01:~# openstack loadbalancer listener create --name listener1 --protocol TCP --protocol-port 22 lb1
+
+
+# Create Pool
+root@controller01:~# openstack loadbalancer pool create --name pool1 --lb-algorithm ROUND_ROBIN --listener listener1 --protocol TCP
+
+
+# create health monitor on the pool that connect backend and probes TCP/22 port
+root@controller01:~# openstack loadbalancer healthmonitor create --delay 15 --max-retries 4 --timeout 10 --type TCP pool1
+
+
+# add member
+openstack loadbalancer member create --subnet-id 192.168.30.0/24  --address 192.168.30.153 --protocol-port 22 pool1
+openstack loadbalancer member create --subnet-id 192.168.30.0/24  --address 192.168.30.158 --protocol-port 22 pool1
+openstack loadbalancer show lb1 | grep vip_port_id
+openstack loadbalancer stats show lb1
+
+
