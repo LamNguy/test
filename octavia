@@ -1,0 +1,95 @@
+neutron port-create --name octavia-hm1 --binding:host_id=control1 lb-mgmt-net
+neutron port-create --name octavia-hm2 --binding:host_id=controller02 lb-mgmt-net
+neutron port-create --name octavia-hm3 --binding:host_id=controller03 lb-mgmt-net
+ 
+ neutron port-show octavia-hm2 | awk '/ mac_address / {print $4}'
+ neutron port-show octavia-hm2 | awk '/ id / {print $4}'
+  
+ 
+ovs-vsctl -- --may-exist add-port br-int octavia-hm2 \
+  -- set Interface octavia-hm2 type=internal \
+  -- set Interface octavia-hm2 external-ids:iface-status=active \
+  -- set Interface octavia-hm2 external-ids:attached-mac=fa:16:3e:54:83:cc \
+  -- set Interface octavia-hm2 external-ids:iface-id=1a6278f2-7182-4053-8b2a-5a9cbacc3604
+
+
+sudo ip link set dev octavia-hm1 address fa:16:3e:af:d5:49
+sudo dhclient octavia-hm1
+
+neutron port-create --name octavia-hm1 --binding:host_id=control1 lb-mgmt-net
+neutron port-create --name octavia-hm2 --binding:host_id=controller02 lb-mgmt-net
+neutron port-create --name octavia-hm3 --binding:host_id=controller03 lb-mgmt-net
+ 
+ neutron port-show octavia-hm2 | awk '/ mac_address / {print $4}'
+ neutron port-show octavia-hm2 | awk '/ id / {print $4}'
+  
+ 
+ovs-vsctl -- --may-exist add-port br-int octavia-hm2 \
+  -- set Interface octavia-hm2 type=internal \
+  -- set Interface octavia-hm2 external-ids:iface-status=active \
+  -- set Interface octavia-hm2 external-ids:attached-mac=fa:16:3e:54:83:cc \
+  -- set Interface octavia-hm2 external-ids:iface-id=1a6278f2-7182-4053-8b2a-5a9cbacc3604
+
+
+sudo ip link set dev octavia-hm1 address fa:16:3e:af:d5:49
+sudo dhclient octavia-hm1
+
+root@controller01:~# kolla-ansible octavia-certificates
+
+
+
+root@controller01:~# sudo apt -y install debootstrap qemu-utils git kpartx
+root@controller01:~# git clone https://opendev.org/openstack/octavia -b stable/2024.1
+# you should deactivate the virtual kolla environment
+root@controller01:~# python3 -m venv dib-venv
+root@controller01:~# source dib-venv/bin/activate
+root@controller01:~# pip install diskimage-builder
+root@controller01:~# cd octavia/diskimage-create
+root@controller01:~# ./diskimage-create.sh
+root@controller01:~# openstack image create amphora-x64-haproxy.qcow2 --container-format bare --disk-format qcow2 --private --tag amphora --file amphora-x64-haproxy.qcow2 --property hw_architecture='x86_64' --property hw_rng_model=virtio
+
+
+root@controller01:~# source /etc/kolla/octavia-openrc.sh
+root@controller01:~# openstack flavor create --vcpus 4 --ram 4096 --disk 10 "amphora" --private
+root@controller01:~# openstack flavor show amphora -f value -c id
+67f9d593-f9f7-4852-ae61-0927d921a200
+
+
+
+
+root@controller01:~# ssh-keygen
+root@controller01:~# openstack keypair create --public-key /root/.ssh/id_rsa.pub octavia_ssh_key
+
+
+
+
+root@controller01:~# OCTAVIA_MGMT_SUBNET=192.168.33.0/24
+OCTAVIA_MGMT_SUBNET_START=192.168.33.140
+OCTAVIA_MGMT_SUBNET_END=192.168.33.160
+
+
+openstack network create lb-mgmt-net --provider-network-type vlan --provider-segment 558  --provider-physical-network physnet2
+openstack subnet create --subnet-range $OCTAVIA_MGMT_SUBNET --allocation-pool \
+  start=$OCTAVIA_MGMT_SUBNET_START,end=$OCTAVIA_MGMT_SUBNET_END \
+  --network lb-mgmt-net lb-mgmt-subnet
+
+
+root@controller01:~# openstack network show lb-mgmt-net -f value -c id
+9acbb774-cbae-4b56-b951-c3b8a2df037b
+
+root@controller01:~# openstack security group create lb-mgmt-sec-grp
+root@controller01:~# openstack security group rule create --protocol icmp lb-mgmt-sec-grp
+root@controller01:~# openstack security group rule create --protocol tcp --dst-port 22 lb-mgmt-sec-grp
+root@controller01:~# openstack security group rule create --protocol tcp --dst-port 9443 lb-mgmt-sec-grp
+root@controller01:~# openstack security group show lb-mgmt-sec-grp -f value -c id
+root@controller01:~# openstack security group create lb-health-mgr-sec-grp
+root@controller01:~# openstack security group rule create --protocol udp --dst-port 5555 lb-health-mgr-sec-grp
+
+
+octavia_amp_boot_network_list: 9acbb774-cbae-4b56-b951-c3b8a2df037b
+octavia_amp_secgroup_list: ff017783-e114-4325-a459-138520777a18
+octavia_amp_flavor_id: 67f9d593-f9f7-4852-ae61-0927d921a200
+root@controller01:~# kolla-ansible -i <inventory> deploy --tags common,horizon,octavia
+
+
+
