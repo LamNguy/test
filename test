@@ -1,3 +1,5 @@
+https://access.cdn.redhat.com/content/origin/files/sha256/82/820853871801754056642ead33834fbe5640421b57e07f2c084684f4d1a7d2fe/rhel-8.10-x86_64-kvm.qcow2?user=954242a2278c98a60016d0d5bb3fb71d&_auth_=1735025932_5d1d993a985bfacf36cd9f74a0c0f1df
+
 root@controller01:~# sudo apt install python3-venv
 root@controller01:~# python3 -m venv /root/venv
 root@controller01:~# source /root/venv/bin/activate
